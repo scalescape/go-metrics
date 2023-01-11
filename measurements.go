@@ -37,7 +37,6 @@ func (l *LatencyMetric) Capture(r *http.Request, mw *ResponseWriter, latency tim
 	if err != nil {
 		return err
 	}
-	fmt.Printf("capturing latency: %f\n", float64(latency.Milliseconds()))
 	metric.Observe(float64(latency.Milliseconds()))
 	return nil
 }

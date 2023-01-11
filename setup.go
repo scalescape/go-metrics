@@ -21,6 +21,12 @@ func WithServiceName(s string) Option {
 	}
 }
 
+func WithPprof() Option {
+	return func(c *Config) {
+		c.enablePprof = true
+	}
+}
+
 var DefaultConfig = &Config{
 	Address:   ":9100",
 	ServiceID: "go-service",
@@ -42,6 +48,10 @@ func Setup(opts ...Option) (Observer, error) {
 	errorMetric, err := NewErrorMetric(*cfg)
 	if err != nil {
 		return Observer{}, err
+	}
+
+	if cfg.enablePprof {
+		registerPprof(sm)
 	}
 
 	go func() {

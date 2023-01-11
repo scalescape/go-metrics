@@ -28,9 +28,10 @@ type Labels struct {
 }
 
 type Config struct {
-	Address   string `split_words:"true" required:"true"`
-	ServiceID string `split_words:"true" default:"service"`
-	labels    Labels
+	Address     string `split_words:"true" required:"true"`
+	ServiceID   string `split_words:"true" default:"service"`
+	labels      Labels
+	enablePprof bool
 }
 
 type Observer struct {

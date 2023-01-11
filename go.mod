@@ -1,4 +1,4 @@
-module github.com/scalescape/metrics
+module github.com/scalescape/go-metrics
 
 go 1.19
 
