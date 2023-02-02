@@ -1,11 +1,29 @@
 package metrics
 
 import (
+	"fmt"
 	"log"
-	"net/http"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/scalescape/go-metrics/common"
+	"github.com/scalescape/go-metrics/prometheus"
 )
+
+type Kind int
+
+const (
+	Prometheus = iota
+	InfluxDB
+	Statsd
+)
+
+type Config struct {
+	Address   string `split_words:"true" required:"true"`
+	ServiceID string `split_words:"true" default:"service"`
+	// const labels
+	labels      map[string]string
+	enablePprof bool
+	Kind
+}
 
 type Option func(c *Config)
 
@@ -30,41 +48,34 @@ func WithPprof() Option {
 var DefaultConfig = &Config{
 	Address:   ":9100",
 	ServiceID: "go-service",
-	labels:    DefaultLabels,
+	Kind:      Prometheus,
 }
 
 func Setup(opts ...Option) (Observer, error) {
-	sm := http.NewServeMux()
 	cfg := DefaultConfig
 	for _, o := range opts {
 		o(cfg)
 	}
-	sm.Handle("/metrics", promhttp.Handler())
+	var reporter reporter
+	var err error
 
-	latencyMetric, err := NewLatencyMetric(*cfg)
-	if err != nil {
-		return Observer{}, err
-	}
-	errorMetric, err := NewErrorMetric(*cfg)
-	if err != nil {
-		return Observer{}, err
-	}
-
-	if cfg.enablePprof {
-		registerPprof(sm)
-	}
-
-	go func() {
-		log.Printf("I! starting metrics server at: %s\n", cfg.Address)
-		if err := http.ListenAndServe(cfg.Address, sm); err != nil {
-			log.Printf("E! error starting metrics server: %v\n", err)
-			return
+	if cfg.Kind == Prometheus {
+		pcfg := prometheus.Config{
+			Address:     cfg.Address,
+			ServiceID:   cfg.ServiceID,
+			ConstLabels: map[string]string{},
+			LabelNames:  common.DefaultLabels,
+			EnablePprof: cfg.enablePprof,
 		}
-	}()
+		reporter, err = prometheus.Setup(pcfg)
+		if err != nil {
+			return Observer{}, fmt.Errorf("unable to setup prometheus: %w", err)
+		}
+		log.Printf("I! using prometheus reporter")
+	}
 	observer := Observer{
-		Config:        *cfg,
-		latencyMetric: latencyMetric,
-		errorMetric:   errorMetric,
+		Config:   *cfg,
+		reporter: reporter,
 	}
 	return observer, nil
 }

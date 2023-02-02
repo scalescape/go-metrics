@@ -4,61 +4,36 @@ import (
 	"log"
 	"net/http"
 	"time"
+
+	"github.com/scalescape/go-metrics/common"
 )
 
-type ResponseWriter struct {
-	http.ResponseWriter
-	StatusCode int
-}
-
-func (rw *ResponseWriter) WriteHeader(statusCode int) {
-	rw.ResponseWriter.WriteHeader(statusCode)
-	rw.StatusCode = statusCode
-}
-
-func NewResponseWriter(w http.ResponseWriter) *ResponseWriter {
-	return &ResponseWriter{ResponseWriter: w, StatusCode: 200}
-}
-
-type Labels struct {
-	Service string
-	Method  string
-	Path    string
-	Status  string
-}
-
-type Config struct {
-	Address     string `split_words:"true" required:"true"`
-	ServiceID   string `split_words:"true" default:"service"`
-	labels      Labels
-	enablePprof bool
+type reporter interface {
+	CaptureLatency(map[string]string, time.Duration) error
+	CaptureRequest(map[string]string) error
 }
 
 type Observer struct {
 	Config
-	latencyMetric *LatencyMetric
-	errorMetric   *ErrorMetric
+	reporter
 }
 
 func (o Observer) Middleware(next http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
-		mw := NewResponseWriter(w)
+		mw := common.NewResponseWriter(w)
 		next.ServeHTTP(mw, r)
 		latency := time.Since(start)
 
-		if err := o.latencyMetric.Capture(r, mw, latency); err != nil {
+		if err := o.CaptureLatency(common.LatencyLabels(r, mw), latency); err != nil {
 			log.Printf("E! error collecting latency metric: %v", err)
 			return
 		}
 
-		if err := o.errorMetric.Capture(r, mw); err != nil {
+		if err := o.CaptureRequest(common.ErrorLabels(r, mw)); err != nil {
 			log.Printf("E! error collecting count metric: %v", err)
 			return
 		}
 	}
 	return http.HandlerFunc(f)
-}
-
-func (o Observer) Close() {
 }
