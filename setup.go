@@ -2,53 +2,42 @@ package metrics
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/scalescape/go-metrics/common"
 	"github.com/scalescape/go-metrics/prometheus"
+	"github.com/scalescape/go-metrics/statsd"
 )
 
-type Kind int
-
-const (
-	Prometheus = iota
-	InfluxDB
-	Statsd
-)
-
-type Config struct {
-	Address   string `split_words:"true" required:"true"`
-	ServiceID string `split_words:"true" default:"service"`
-	// const labels
-	labels      map[string]string
-	enablePprof bool
-	Kind
-}
-
-type Option func(c *Config)
+type Option func(c *common.Config)
 
 func WithAddress(addr string) Option {
-	return func(c *Config) {
+	return func(c *common.Config) {
 		c.Address = addr
 	}
 }
 
 func WithServiceName(s string) Option {
-	return func(c *Config) {
+	return func(c *common.Config) {
 		c.ServiceID = s
 	}
 }
 
 func WithPprof() Option {
-	return func(c *Config) {
-		c.enablePprof = true
+	return func(c *common.Config) {
+		c.EnablePprof = true
 	}
 }
 
-var DefaultConfig = &Config{
+func WithKind(kind common.Kind) Option {
+	return func(c *common.Config) {
+		c.Kind = kind
+	}
+}
+
+var DefaultConfig = &common.Config{
 	Address:   ":9100",
 	ServiceID: "go-service",
-	Kind:      Prometheus,
+	Kind:      common.Prometheus,
 }
 
 func Setup(opts ...Option) (Observer, error) {
@@ -59,20 +48,19 @@ func Setup(opts ...Option) (Observer, error) {
 	var reporter reporter
 	var err error
 
-	if cfg.Kind == Prometheus {
-		pcfg := prometheus.Config{
-			Address:     cfg.Address,
-			ServiceID:   cfg.ServiceID,
-			ConstLabels: map[string]string{},
-			LabelNames:  common.DefaultLabels,
-			EnablePprof: cfg.enablePprof,
-		}
-		reporter, err = prometheus.Setup(pcfg)
+	switch cfg.Kind {
+	case common.Prometheus:
+		reporter, err = prometheus.Setup(*cfg)
 		if err != nil {
 			return Observer{}, fmt.Errorf("unable to setup prometheus: %w", err)
 		}
-		log.Printf("I! using prometheus reporter")
+	case common.Statsd:
+		reporter, err = statsd.Setup(*cfg)
+		if err != nil {
+			return Observer{}, fmt.Errorf("unable to setup influx: %w", err)
+		}
 	}
+
 	observer := Observer{
 		Config:   *cfg,
 		reporter: reporter,

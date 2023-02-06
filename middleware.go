@@ -14,7 +14,7 @@ type reporter interface {
 }
 
 type Observer struct {
-	Config
+	common.Config
 	reporter
 }
 

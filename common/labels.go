@@ -23,7 +23,7 @@ func LatencyLabels(r *http.Request, mw *ResponseWriter) map[string]string {
 	return map[string]string{
 		DefaultLabels.Method: r.Method,
 		DefaultLabels.Path:   r.URL.Path,
-		//TODO: mask it as 4xx,5xx,...
+		// TODO: mask it as 4xx,5xx,...
 		DefaultLabels.Status: fmt.Sprintf("%d", mw.StatusCode),
 	}
 }

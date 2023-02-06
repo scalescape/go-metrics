@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/scalescape/go-metrics/common"
 )
 
 type Reporter struct {
@@ -13,7 +14,7 @@ type Reporter struct {
 	requests      *ErrorMetric
 }
 
-func Setup(cfg Config) (*Reporter, error) {
+func Setup(cfg common.Config) (*Reporter, error) {
 	latencyMetric, err := NewLatencyMetric(cfg)
 	if err != nil {
 		return nil, err
@@ -32,9 +33,9 @@ func Setup(cfg Config) (*Reporter, error) {
 	}
 	sm.Handle("/metrics", promhttp.Handler())
 	go func() {
-		log.Printf("I! starting metrics server at: %s\n", cfg.Address)
+		log.Printf("I! starting prometheus metrics server at: %s\n", cfg.Address)
 		if err := http.ListenAndServe(cfg.Address, sm); err != nil {
-			log.Printf("E! error starting metrics server: %v\n", err)
+			log.Printf("E! error starting prometheus metrics server: %v\n", err)
 			return
 		}
 	}()
@@ -50,6 +51,6 @@ func (rep *Reporter) CaptureRequest(labels map[string]string) error {
 }
 
 func (rep *Reporter) Close() error {
-	//TODO: based on channel signal for stopping
+	// TODO: based on channel signal for stopping
 	return nil
 }

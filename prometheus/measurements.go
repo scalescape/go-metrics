@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/scalescape/go-metrics/common"
 )
 
 type LatencyMetric struct {
@@ -36,8 +37,8 @@ func (m *ErrorMetric) Capture(labels map[string]string) error {
 	return nil
 }
 
-func NewLatencyMetric(cfg Config) (*LatencyMetric, error) {
-	labNames := cfg.LabelNames
+func NewLatencyMetric(cfg common.Config) (*LatencyMetric, error) {
+	labNames := common.DefaultLabels
 	latencyMetric := prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{Name: "http_latency_ms"},
 		[]string{labNames.Service, labNames.Method, labNames.Path, labNames.Status},
@@ -52,8 +53,8 @@ func NewLatencyMetric(cfg Config) (*LatencyMetric, error) {
 	return &LatencyMetric{lm}, nil
 }
 
-func NewErrorMetric(cfg Config) (*ErrorMetric, error) {
-	labNames := cfg.LabelNames
+func NewErrorMetric(cfg common.Config) (*ErrorMetric, error) {
+	labNames := common.DefaultLabels
 	errorMetric := prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{Name: "http_requests"},
 		[]string{labNames.Service, labNames.Method, labNames.Path, labNames.Status})
