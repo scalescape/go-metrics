@@ -27,6 +27,7 @@ func LatencyLabels(r *http.Request, mw *ResponseWriter) map[string]string {
 		DefaultLabels.Status: fmt.Sprintf("%d", mw.StatusCode),
 	}
 }
+
 func ErrorLabels(r *http.Request, mw *ResponseWriter) map[string]string {
 	return map[string]string{
 		DefaultLabels.Method: r.Method,

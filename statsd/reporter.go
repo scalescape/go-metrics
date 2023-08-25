@@ -1,7 +1,6 @@
 package statsd
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/cactus/go-statsd-client/v5/statsd"
@@ -47,6 +46,5 @@ func (rep *Reporter) convertLabels(labels map[string]string) []statsd.Tag {
 	for k, val := range labels {
 		tags = append(tags, statsd.Tag{k, val})
 	}
-	fmt.Printf("labels: %+v\n", tags)
 	return tags
 }

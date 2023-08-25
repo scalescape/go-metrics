@@ -2,6 +2,7 @@
 
 library to capture go service metrics, abstracting protocol (http, gRPC) and details of timeseries db.
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/scalescape/go-metrics)](https://goreportcard.com/report/github.com/scalescape/go-metrics)
 
 ## Prometheus Setup
 
